@@ -3,9 +3,9 @@ import CheckIcon from "@mui/icons-material/Check";
 import ErrorIcon from "@mui/icons-material/Error";
 import SaveIcon from "@mui/icons-material/Save";
 import AddIcon from "@mui/icons-material/Add";
-import zohoData from "./data/zoho_contacts.json";
-import ccData from "./data/constant_contacts.json";
+import { api } from "./services/api";
 import MatchTypeLegend from "./components/MatchTypeLegend";
+import axios from "axios";
 
 // Define contact types
 interface ZohoContact {
@@ -75,17 +75,20 @@ const ContactComparison: React.FC = () => {
     loadContactData();
   }, []);
 
-  const loadContactData = () => {
+  const loadContactData = async () => {
     try {
-      // Load Zoho contacts from JSON
-      const loadedZohoContacts = zohoData as ZohoContact[];
+      const [zohoResponse, ccResponse] = await Promise.all([
+        api.getZohoContacts(),
+        api.getConstantContacts(),
+      ]);
+
+      const loadedZohoContacts = zohoResponse.data;
       setZohoContacts(loadedZohoContacts);
       if (loadedZohoContacts.length > 0) {
         setSelectedZoho(loadedZohoContacts[0]);
       }
 
-      // Load Constant Contact contacts from JSON
-      const loadedCCContacts = ccData as CCContact[];
+      const loadedCCContacts = ccResponse.data;
       setCcContacts(loadedCCContacts);
       if (loadedCCContacts.length > 0) {
         setSelectedCC(loadedCCContacts[0]);
@@ -200,30 +203,49 @@ const ContactComparison: React.FC = () => {
     }));
   };
 
-  const saveZohoChanges = () => {
+  const saveZohoChanges = async () => {
     if (!selectedZoho) return;
 
-    const updatedContact: ZohoContact = {
-      ...selectedZoho,
-      ...editedZoho,
-    } as ZohoContact;
-    const index = zohoContacts.findIndex((c) => c === selectedZoho);
+    try {
+      const response = await api.updateZohoContact(
+        selectedZoho.Email,
+        editedZoho
+      );
+      const updatedContact = response.data;
 
-    if (index !== -1) {
-      const newContacts = [...zohoContacts];
-      newContacts[index] = updatedContact;
-      setZohoContacts(newContacts);
-      setSelectedZoho(updatedContact);
-      setEditedZoho({});
+      const index = zohoContacts.findIndex(
+        (c) => c.Email === selectedZoho.Email
+      );
+      if (index !== -1) {
+        const newContacts = [...zohoContacts];
+        newContacts[index] = updatedContact;
+        setZohoContacts(newContacts);
+        setSelectedZoho(updatedContact);
+        setEditedZoho({});
+      }
+    } catch (err) {
+      setError(
+        `Error saving changes: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
     }
   };
-
-  const createNewContact = () => {
-    const contact = { ...newContact } as ZohoContact;
-    setZohoContacts((prev) => [...prev, contact]);
-    setSelectedZoho(contact);
-    setNewContact({});
-    setShowNewContact(false);
+  const createNewContact = async () => {
+    try {
+      const response = await api.createZohoContact(newContact);
+      const createdContact = response.data;
+      setZohoContacts((prev) => [...prev, createdContact]);
+      setSelectedZoho(createdContact);
+      setNewContact({});
+      setShowNewContact(false);
+    } catch (err) {
+      setError(
+        `Error creating contact: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
+    }
   };
 
   const getDisplayValue = (
