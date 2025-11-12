@@ -6,7 +6,6 @@ import AddIcon from "@mui/icons-material/Add";
 import { api } from "./services/api";
 import MatchTypeLegend from "./components/MatchTypeLegend";
 
-// Define contact types
 interface ZohoContact {
   id: string;
   first_name: string;
@@ -69,7 +68,6 @@ const ContactComparison: React.FC = () => {
   const [zohoSearch, setZohoSearch] = useState<string>("");
   const [ccSearch, setCcSearch] = useState<string>("");
 
-  // Field mapping: Zoho field name -> {cc: CC field name, label: Display name}
   const fieldMapping: Record<keyof Omit<ZohoContact, "id">, FieldMapping> = {
     first_name: { cc: "first_name", label: "First Name" },
     last_name: { cc: "last_name", label: "Last Name" },
@@ -124,13 +122,13 @@ const ContactComparison: React.FC = () => {
 
   const getFieldValue = (
     contact: ZohoContact | CCContact | null,
-    field: keyof ZohoContact,
+    field: Exclude<keyof ZohoContact, "id">,
     isCC: boolean = false
   ): string => {
     if (!contact) return "";
     if (isCC) {
       const ccField = fieldMapping[field]?.cc;
-      return (contact as CCContact)[ccField] || "";
+      return String((contact as CCContact)[ccField]) || "";
     }
     return (contact as ZohoContact)[field] || "";
   };
@@ -265,7 +263,7 @@ const ContactComparison: React.FC = () => {
 
   const getDisplayValue = (
     contact: ZohoContact | null,
-    field: keyof ZohoContact,
+    field: Exclude<keyof ZohoContact, "id">, // Exclude "id" from the keys
     isCC: boolean,
     edited: Partial<ZohoContact>
   ): string => {
@@ -275,8 +273,12 @@ const ContactComparison: React.FC = () => {
     return getFieldValue(contact, field, isCC);
   };
 
-  const renderFieldValue = (field: keyof ZohoContact, value: string) => {
-    if (field === "linkedin_profile" && value) {
+  const renderFieldValue = (field: keyof ZohoContact, value: string | null) => {
+    if (
+      field === "linkedin_profile" &&
+      value &&
+      value.toLowerCase() !== "null"
+    ) {
       return (
         <a
           href={value}
@@ -288,7 +290,12 @@ const ContactComparison: React.FC = () => {
         </a>
       );
     }
-    return value || <span className="text-gray-400 italic">Empty</span>;
+
+    return value && value.toLowerCase() !== "null" ? (
+      value
+    ) : (
+      <span className="text-gray-400 italic">Empty</span>
+    );
   };
 
   const filteredZohoContacts = zohoContacts.filter((contact) => {
@@ -332,7 +339,7 @@ const ContactComparison: React.FC = () => {
       <div className="grid grid-cols-2 gap-6 ">
         {/* ZOHO CONTACT SELECTOR */}
         <div className="flex flex-col gap-2 bg-white rounded-md border border-gray-200 p-2">
-          <label className="block font-semibold text-gray-700 ">
+          <label className="uppercase tracking-tight font-bold text-gray-700 ">
             Search Zoho Contacts
           </label>
           <input
@@ -340,7 +347,7 @@ const ContactComparison: React.FC = () => {
             value={zohoSearch}
             onChange={(e) => setZohoSearch(e.target.value)}
             placeholder="Search by first, last name, or email..."
-            className="w-full border border-gray-300 rounded-md p-2"
+            className="w-full border border-gray-300 rounded-md p-2 text-sm"
           />
           <select
             className="w-full border border-gray-300 rounded-md p-2 text-sm"
@@ -368,7 +375,7 @@ const ContactComparison: React.FC = () => {
 
         {/* CONSTANT CONTACT SELECTOR */}
         <div className="flex flex-col gap-2 bg-white rounded-md border border-gray-200 p-2">
-          <label className="block font-semibold text-gray-700">
+          <label className="uppercase tracking-tight font-bold text-gray-700">
             Search Constant Contact
           </label>
           <input
@@ -376,7 +383,7 @@ const ContactComparison: React.FC = () => {
             value={ccSearch}
             onChange={(e) => setCcSearch(e.target.value)}
             placeholder="Search by first, last name, or email..."
-            className="w-full border border-gray-300 rounded-md p-2"
+            className="w-full border border-gray-300 rounded-md p-2 text-sm"
           />
           <select
             className="w-full border border-gray-300 rounded-md p-2 text-sm"
@@ -388,8 +395,8 @@ const ContactComparison: React.FC = () => {
               if (contact) setSelectedCC(contact);
             }}
           >
-            {filteredCCContacts.map((contact, idx) => (
-              <option key={idx} value={idx}>
+            {filteredCCContacts.map((contact) => (
+              <option key={contact.id} value={contact.id}>
                 {contact.first_name} {contact.last_name} -{" "}
                 {contact.email_address}
               </option>
@@ -407,14 +414,14 @@ const ContactComparison: React.FC = () => {
           <button
             onClick={saveZohoChanges}
             disabled={Object.keys(editedZoho).length === 0}
-            className="flex items-center gap-2 bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 bg-blue-600 text-white text-sm uppercase tracking-tight font-medium p-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
           >
             <SaveIcon fontSize="inherit" />
             Save Zoho Changes
           </button>
           <button
             onClick={() => setShowNewContact(true)}
-            className="flex items-center gap-2 bg-green-600 text-white p-2 rounded-md hover:bg-green-700 cursor-pointer"
+            className="flex text-sm uppercase tracking-tight font-medium p-2 items-center gap-2 bg-green-600 text-white p-2 rounded-md hover:bg-green-700 cursor-pointer"
           >
             <AddIcon fontSize="inherit" />
             Create New Contact
@@ -427,10 +434,10 @@ const ContactComparison: React.FC = () => {
       <div className="bg-white rounded-md overflow-hidden">
         <div className="grid grid-cols-3 bg-gray-100 border-b border-gray-300">
           <div className="p-4 font-semibold text-gray-700">Field</div>
-          <div className="p-4 font-semibold text-blue-700 border-l border-gray-300">
+          <div className="p-4 font-semibold border-l border-gray-300">
             Zoho CRM (Editable)
           </div>
-          <div className="p-4 font-semibold text-purple-700 border-l border-gray-300">
+          <div className="p-4 font-semibold border-l border-gray-300">
             Constant Contact
           </div>
         </div>
@@ -439,11 +446,15 @@ const ContactComparison: React.FC = () => {
           (field, idx) => {
             const zohoVal = getDisplayValue(
               selectedZoho,
-              field,
+              field as keyof typeof fieldMapping,
               false,
               editedZoho
             );
-            const ccVal = getFieldValue(selectedCC, field, true);
+            const ccVal = getFieldValue(
+              selectedCC,
+              field as keyof typeof selectedCC,
+              true
+            );
             const matchType = getMatchType(zohoVal, ccVal);
 
             return (
@@ -454,7 +465,8 @@ const ContactComparison: React.FC = () => {
                 }`}
               >
                 <div className="p-4 font-medium text-gray-700">
-                  {fieldMapping[field].label}
+                  {fieldMapping[field as keyof typeof fieldMapping]?.label ||
+                    "Unknown Field"}
                 </div>
                 <div
                   className={`p-4 border-l border-gray-200 relative ${getBackgroundColor(
@@ -480,7 +492,7 @@ const ContactComparison: React.FC = () => {
                   />
                   {matchType !== "different" && (
                     <CheckIcon
-                      className={`absolute right-2 top-1/2 -translate-y-1/2 ${getIconColor(
+                      className={`absolute right-6 top-1/2 -translate-y-1/2 ${getIconColor(
                         matchType
                       )}`}
                       fontSize="inherit"
@@ -501,7 +513,7 @@ const ContactComparison: React.FC = () => {
                   </div>
                   {matchType !== "different" && (
                     <CheckIcon
-                      className={`absolute right-2 top-1/2 -translate-y-1/2 ${getIconColor(
+                      className={`absolute right-6 top-1/2 -translate-y-1/2 ${getIconColor(
                         matchType
                       )}`}
                       fontSize="inherit"
@@ -529,7 +541,8 @@ const ContactComparison: React.FC = () => {
                 (field) => (
                   <div key={field}>
                     <label className="block text-sm font-medium text-gray-700 ">
-                      {fieldMapping[field].label}
+                      {fieldMapping[field as keyof typeof fieldMapping]
+                        ?.label || "Unknown Field"}
                     </label>
                     <input
                       type="text"

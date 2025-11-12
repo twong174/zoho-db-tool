@@ -1,7 +1,9 @@
 const MatchTypeLegend = () => {
   return (
     <div className="bg-white rounded-md p-2 ">
-      <p className="text-xs">Match Type Legend</p>
+      <p className="text-xs tracking-tight font-semibold text-gray-700 uppercase">
+        Match Type Legend
+      </p>
 
       <div className="flex items-center gap-2 text-xs">
         <div className="w-3 h-3 border border-green-500 bg-green-400 rounded-xs"></div>
