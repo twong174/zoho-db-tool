@@ -5,37 +5,51 @@ import SaveIcon from "@mui/icons-material/Save";
 import AddIcon from "@mui/icons-material/Add";
 import { api } from "./services/api";
 import MatchTypeLegend from "./components/MatchTypeLegend";
-import axios from "axios";
 
 // Define contact types
 interface ZohoContact {
-  "First Name": string;
-  "Last Name": string;
-  Email: string;
-  "LinkedIn Profile": string;
-  Phone: string;
-  Title: string;
-  Company: string;
-  Street: string;
-  City: string;
-  State: string;
-  "Zip Code": string;
-  Country: string;
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  title: string;
+  phone: string;
+  home_phone: string;
+  other_phone: string;
+  linkedin_profile: string;
+  sector: string;
+  mailing_street: string;
+  mailing_city: string;
+  mailing_state: string;
+  mailing_zip: string;
+  mailing_country: string;
+  company_name: string;
+  company_city: string;
+  company_state: string;
+  company_country: string;
 }
 
 interface CCContact {
-  "First Name": string;
-  "Last Name": string;
-  "Email Address": string;
-  "LinkedIn URL": string;
-  "Phone Number": string;
-  "Job Title": string;
-  "Company Name": string;
-  "Street Address": string;
-  City: string;
-  "State/Province": string;
-  "Postal Code": string;
-  Country: string;
+  id: number;
+  first_name: string;
+  last_name: string;
+  email_address: string;
+  job_title: string;
+  phone_work: string;
+  phone_home: string;
+  phone_mobile: string;
+  phone_other: string;
+  linkedin_profile_url: string;
+  sector: string;
+  street_home: string;
+  city_home: string;
+  state_home: string;
+  zip_home: string;
+  country_home: string;
+  company: string;
+  city_work: string;
+  state_work: string;
+  country_work: string;
 }
 
 interface FieldMapping {
@@ -56,19 +70,25 @@ const ContactComparison: React.FC = () => {
   const [ccSearch, setCcSearch] = useState<string>("");
 
   // Field mapping: Zoho field name -> {cc: CC field name, label: Display name}
-  const fieldMapping: Record<keyof ZohoContact, FieldMapping> = {
-    "First Name": { cc: "First Name", label: "First Name" },
-    "Last Name": { cc: "Last Name", label: "Last Name" },
-    Email: { cc: "Email Address", label: "Email" },
-    "LinkedIn Profile": { cc: "LinkedIn URL", label: "LinkedIn Profile" },
-    Phone: { cc: "Phone Number", label: "Phone" },
-    Title: { cc: "Job Title", label: "Title" },
-    Company: { cc: "Company Name", label: "Company" },
-    Street: { cc: "Street Address", label: "Street" },
-    City: { cc: "City", label: "City" },
-    State: { cc: "State/Province", label: "State" },
-    "Zip Code": { cc: "Postal Code", label: "Zip Code" },
-    Country: { cc: "Country", label: "Country" },
+  const fieldMapping: Record<keyof Omit<ZohoContact, "id">, FieldMapping> = {
+    first_name: { cc: "first_name", label: "First Name" },
+    last_name: { cc: "last_name", label: "Last Name" },
+    email: { cc: "email_address", label: "Email" },
+    title: { cc: "job_title", label: "Job Title" },
+    phone: { cc: "phone_work", label: "Work Phone" },
+    home_phone: { cc: "phone_home", label: "Home Phone" },
+    other_phone: { cc: "phone_other", label: "Other Phone" },
+    linkedin_profile: { cc: "linkedin_profile_url", label: "LinkedIn Profile" },
+    sector: { cc: "sector", label: "Sector" },
+    mailing_street: { cc: "street_home", label: "Street Address" },
+    mailing_city: { cc: "city_home", label: "City (Home)" },
+    mailing_state: { cc: "state_home", label: "State (Home)" },
+    mailing_zip: { cc: "zip_home", label: "Zip Code (Home)" },
+    mailing_country: { cc: "country_home", label: "Country (Home)" },
+    company_name: { cc: "company", label: "Company Name" },
+    company_city: { cc: "city_work", label: "City (Work)" },
+    company_state: { cc: "state_work", label: "State (Work)" },
+    company_country: { cc: "country_work", label: "Country (Work)" },
   };
 
   useEffect(() => {
@@ -207,15 +227,10 @@ const ContactComparison: React.FC = () => {
     if (!selectedZoho) return;
 
     try {
-      const response = await api.updateZohoContact(
-        selectedZoho.Email,
-        editedZoho
-      );
+      const response = await api.updateZohoContact(selectedZoho.id, editedZoho);
       const updatedContact = response.data;
 
-      const index = zohoContacts.findIndex(
-        (c) => c.Email === selectedZoho.Email
-      );
+      const index = zohoContacts.findIndex((c) => c.id === selectedZoho.id);
       if (index !== -1) {
         const newContacts = [...zohoContacts];
         newContacts[index] = updatedContact;
@@ -261,7 +276,7 @@ const ContactComparison: React.FC = () => {
   };
 
   const renderFieldValue = (field: keyof ZohoContact, value: string) => {
-    if (field === "LinkedIn Profile" && value) {
+    if (field === "linkedin_profile" && value) {
       return (
         <a
           href={value}
@@ -280,18 +295,18 @@ const ContactComparison: React.FC = () => {
     const query = zohoSearch.toLowerCase();
 
     return (
-      contact["First Name"]?.toLowerCase().includes(query) ||
-      contact["Last Name"]?.toLowerCase().includes(query) ||
-      contact.Email?.toLowerCase().includes(query)
+      contact.first_name?.toLowerCase().includes(query) ||
+      contact.last_name?.toLowerCase().includes(query) ||
+      contact.email?.toLowerCase().includes(query)
     );
   });
 
   const filteredCCContacts = ccContacts.filter((contact) => {
     const query = ccSearch.toLowerCase();
     return (
-      contact["First Name"]?.toLowerCase().includes(query) ||
-      contact["Last Name"]?.toLowerCase().includes(query) ||
-      contact["Email Address"]?.toLowerCase().includes(query)
+      contact.first_name?.toLowerCase().includes(query) ||
+      contact.last_name?.toLowerCase().includes(query) ||
+      contact.email_address?.toLowerCase().includes(query)
     );
   });
 
@@ -329,10 +344,10 @@ const ContactComparison: React.FC = () => {
           />
           <select
             className="w-full border border-gray-300 rounded-md p-2 text-sm"
-            value={selectedZoho?.Email || ""}
+            value={selectedZoho?.id || ""}
             onChange={(e) => {
               const contact = filteredZohoContacts.find(
-                (c) => c.Email === e.target.value
+                (c) => c.id === e.target.value
               );
               if (contact) {
                 setSelectedZoho(contact);
@@ -341,8 +356,8 @@ const ContactComparison: React.FC = () => {
             }}
           >
             {filteredZohoContacts.map((contact) => (
-              <option key={contact.Email} value={contact.Email}>
-                {contact["First Name"]} {contact["Last Name"]} - {contact.Email}
+              <option key={contact.id} value={contact.id}>
+                {contact.first_name} {contact.last_name} - {contact.email}
               </option>
             ))}
             {filteredZohoContacts.length === 0 && (
@@ -365,18 +380,18 @@ const ContactComparison: React.FC = () => {
           />
           <select
             className="w-full border border-gray-300 rounded-md p-2 text-sm"
-            value={selectedCC ? filteredCCContacts.indexOf(selectedCC) : ""}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-              const index = parseInt(e.target.value);
-              if (index >= 0) {
-                setSelectedCC(filteredCCContacts[index]);
-              }
+            value={selectedCC?.id ?? ""}
+            onChange={(e) => {
+              const contact = filteredCCContacts.find(
+                (c) => c.id === Number(e.target.value)
+              );
+              if (contact) setSelectedCC(contact);
             }}
           >
             {filteredCCContacts.map((contact, idx) => (
               <option key={idx} value={idx}>
-                {contact["First Name"]} {contact["Last Name"]} -{" "}
-                {contact["Email Address"]}
+                {contact.first_name} {contact.last_name} -{" "}
+                {contact.email_address}
               </option>
             ))}
             {filteredCCContacts.length === 0 && (
@@ -458,7 +473,7 @@ const ContactComparison: React.FC = () => {
                         : "border-gray-300"
                     } ${getBackgroundColor(matchType)}`}
                     placeholder={
-                      field === "LinkedIn Profile"
+                      field === "linkedin_profile"
                         ? "https://linkedin.com/in/..."
                         : ""
                     }
@@ -527,7 +542,7 @@ const ContactComparison: React.FC = () => {
                       }
                       className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500"
                       placeholder={
-                        field === "LinkedIn Profile"
+                        field === "linkedin_profile"
                           ? "https://linkedin.com/in/..."
                           : ""
                       }
