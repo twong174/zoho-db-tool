@@ -38,7 +38,7 @@ app.put("/zoho-contacts/:email", async (req, res) => {
       .map((field, idx) => `"${field}" = $${idx + 1}`)
       .join(", ");
 
-    const query = `UPDATE zoho_contacts SET ${setClause} WHERE "Email" = $${
+    const query = `UPDATE zoho_contacts SET ${setClause} WHERE email = $${
       fields.length + 1
     } RETURNING *`;
     const result = await pool.query(query, [...values, email]);
